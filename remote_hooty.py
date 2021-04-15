@@ -9,6 +9,7 @@ from flask import Flask
 from flask import request
 from threading import Thread
 from neopixel import *
+import datetime
 
 APP = Flask(__name__)
 HOOTY = OwlLight()
@@ -22,6 +23,7 @@ def api_light():
 
     # Handle the Mic & Eye state
     if mic_state is True:
+        HOOTY.update_time(datetime.datetime.now())
         eye_thread = Thread(target = HOOTY.eyes, args=(True,))
         eye_thread.start()
         light_state['eyes'] = True
@@ -32,6 +34,7 @@ def api_light():
 
     # Handle the Vid & Beak + Head state
     if vid_state is True:
+        HOOTY.update_time(datetime.datetime.now())
         beak_thread = Thread(target = HOOTY.beak, args=(True,))
         head_thread = Thread(target = HOOTY.head, args=(True,))
         beak_thread.start()

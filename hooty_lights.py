@@ -1,5 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
+# why did I write this cooooooooooooooooooooooooooooooooooooooode
 import time
+import datetime
 from threading import Lock
 from neopixel import *
 
@@ -17,6 +19,7 @@ class OwlLight():
         self.eye_state = False
         self.beak_state = False
         self.head_state = False
+        self.last_active_ping = None
         self.eye_mode = None # TODO: Want to add varying led modes
         self.beak_mode = None # TODO: Want to add varying led modes
         self.head_mode = None # TODO: Want to add varying led modes
@@ -29,6 +32,21 @@ class OwlLight():
                                             self._LED_CHANNEL)
         self.indicator.begin()
         self.data_lock = Lock()
+
+    # Update the last the time we had an active ping for something
+    def update_time(self, timestamp):
+        self.last_active_ping = timestamp
+
+    # Check if the last active ping was longer than 10 seconds ago
+    def check_if_stale(self):
+        if self.last_active_ping == None:
+            return False
+        else:
+            current_time = datetime.datetime.now()
+            if (current_time.timestamp() - self.last_active_ping.timestamp()) > 10: # idk I picked 10 seconds because
+                return True
+            else:
+                return False
 
     # Clear all LEDs
     def clear(self):
@@ -54,6 +72,11 @@ class OwlLight():
                 self.eye_state = True
             # Keeping the thread alive & fade that possessed hooty color!
             while self.eye_state is True:
+
+                if self.check_if_stale():
+                    with self.data_lock:
+                        self.eye_state = False
+
                 for i in reversed(range(255)):
                     if self.eye_state is False:
                         break
@@ -89,6 +112,9 @@ class OwlLight():
             with self.data_lock:
                 self.beak_state = True
             while self.beak_state is True:
+                if self.check_if_stale():
+                    with self.data_lock:
+                        self.beak_state = False
                 self.indicator.setPixelColor(0, Color(0, 255, 0))
                 self.indicator.show()
             self.indicator.setPixelColor(0, Color(0, 0, 0))
@@ -109,6 +135,9 @@ class OwlLight():
             with self.data_lock:
                 self.head_state = True
             while self.head_state is True:
+                if self.check_if_stale():
+                    with self.data_lock:
+                        self.head_state = False
                 self.indicator.setPixelColor(2, Color(0, 255, 0))
                 self.indicator.show()
             self.indicator.setPixelColor(2, Color(0, 0, 0))
